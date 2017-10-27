@@ -1,0 +1,151 @@
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+import numpy as np
+from sklearn.preprocessing import OneHotEncoder
+number = LabelEncoder()
+
+houseprice = pd.read_table("/Users/tplusd/Desktop/housing prices.txt")
+
+
+
+houseprice['City']=number.fit_transform(houseprice['City'].astype('str'))
+
+
+values = np.array(houseprice['City'])
+onehot_encoder = OneHotEncoder(sparse=False)
+
+values=values.reshape(len(values),1)
+onehot_encoded = onehot_encoder.fit_transform(values)
+#inverted = number.inverse_transform([np.argmax(onehot_encoded[0, :])])
+
+houseprice['feature 5']=houseprice['sqft']**2
+houseprice['feature 6']=houseprice['baths']**2
+houseprice['feature 7']=houseprice['bedrooms']**2
+houseprice['feature 8']=houseprice['sqft']**3
+houseprice['feature 9']=houseprice['baths']**3
+houseprice['feature 10']=houseprice['bedrooms']**3
+houseprice['feature 11']=houseprice['sqft']*houseprice['baths']
+houseprice['feature 12']=houseprice['sqft']*houseprice['bedrooms']
+houseprice['feature 13']=houseprice['baths']*houseprice['bedrooms']
+houseprice['feature 14']=houseprice['sqft']*houseprice['baths']*houseprice['bedrooms']
+#mean =houseprice[['sqft','bedrooms','baths','feature 5','feature 6','feature 7','feature 8','feature 9','feature 10','feature 11','feature 12','feature 13','feature 14']].mean(axis=0)
+#std =houseprice[['sqft','bedrooms','baths','feature 5','feature 6','feature 7','feature 8','feature 9','feature 10','feature 11','feature 12','feature 13','feature 14']].std(axis=0)
+
+#houseprice[['sqft','bedrooms','baths','feature 5','feature 6','feature 7','feature 8','feature 9','feature 10','feature 11','feature 12','feature 13','feature 14']] = (houseprice[['sqft','bedrooms','baths','feature 5','feature 6','feature 7','feature 8','feature 9','feature 10','feature 11','feature 12','feature 13','feature 14']]-mean)/std
+outputmean=houseprice['price'].mean(axis=0)
+houseprice['Actual label']=""
+for i in range(0,len(houseprice)):
+    if houseprice.loc[i,'price'] <= outputmean:
+        houseprice.loc[i,'Actual label'] ='Not expensive'
+    if houseprice.loc[i,'price'] > outputmean:
+        houseprice.loc[i,'Actual label'] ='Expensive'
+
+
+columns =houseprice[['sqft','bedrooms','baths','feature 5','feature 6','feature 7','feature 8','feature 9','feature 10','feature 11','feature 12','feature 13','feature 14']] 
+columns_min =columns.min()
+columns_max =columns.max()
+houseprice[['sqft','bedrooms','baths','feature 5','feature 6','feature 7','feature 8','feature 9','feature 10','feature 11','feature 12','feature 13','feature 14']]=(houseprice[['sqft','bedrooms','baths','feature 5','feature 6','feature 7','feature 8','feature 9','feature 10','feature 11','feature 12','feature 13','feature 14']]-columns_min)/(columns_max-columns_min)
+                    
+
+houseprice['Constant']=1
+
+
+#outputstd = houseprice['price'].std(axis=0)
+price_min = houseprice['price'].min()
+price_max = houseprice['price'].max()
+houseprice['price'] = (houseprice['price']-price_min)/(price_max-price_min)
+
+
+train_houseprice = houseprice.head(round(0.7*len(houseprice)))
+test_houseprice = houseprice.tail(round(0.3*len(houseprice)))
+n = len(train_houseprice)
+
+data = np.array(houseprice[['Constant','sqft','bedrooms','baths','feature 8','feature 9','feature 10']])
+newdata = np.concatenate((onehot_encoded, data ),axis=1)
+y= np.array(houseprice['price'])
+
+traindata_x=newdata[0:round(0.7*len(houseprice))]
+traindata_y=y[0:round(0.7*len(houseprice))]
+testdata_x=newdata[-round(0.3*len(houseprice)):]
+testdata_y=y[-round(0.3*len(houseprice)):]
+traindata_x = traindata_x.astype(np.float64)
+traindata_y = traindata_y.astype(np.float64)
+testdata_x = testdata_x.astype(np.float64)
+testdata_y = testdata_y.astype(np.float64)
+a = np.random.random((7+len(onehot_encoded[0]),))
+#a = np.ones(4+len(onehot_encoded[0]))
+#traindata_y
+J=(0.5/n)*sum((np.array((np.mat(traindata_x)  * np.mat(a).transpose())-np.mat(traindata_y).transpose()))**2)
+
+converged = False
+
+ep = 0.0000001
+alpha = 0.001
+
+iter=0
+while converged == False:
+    gradient=(1/n)*(np.mat(traindata_x).transpose()*((np.mat(traindata_x)  * np.mat(a).transpose())-np.mat(traindata_y).transpose()))
+    a = np.array((np.mat(a).transpose()-alpha*gradient).transpose())
+    
+    e=(0.5/n)*sum((np.array((np.mat(traindata_x)  * np.mat(a).transpose())-np.mat(traindata_y).transpose()))**2)
+    if abs(J-e)<= ep:
+        train_result=np.mat(traindata_x)  * np.mat(a).transpose()
+        print ('Converged, iterations:',iter,'!')
+       
+        converged = True 
+        break
+    J=e
+    iter += 1
+    
+    print('Unconverged,iterations:',iter,'error=',e)
+    #print(traindata_x)
+    #print('shape of a =',a.shape)
+    #print('shape of gradient =',gradient.shape)
+    #print('shape of weight =',np.mat(a).transpose().shape)
+
+m=len(test_houseprice)
+predict=(np.mat(testdata_x)* np.mat(a).transpose() )
+
+error = (0.5/m)*sum((np.array((np.mat(testdata_x)  * np.mat(a).transpose())-np.mat(testdata_y).transpose()))**2)
+print('printed error =',error)
+predict = predict*(price_max-price_min)+price_min
+#print('printed price =',predict)
+#print(a)
+
+
+
+#perceptron
+train_result=train_result*(price_max-price_min)+price_min
+test_result = predict
+#print(train_result)
+#print(test_result)
+
+predicted_result= np.concatenate((train_result.transpose(), test_result.transpose()),axis=1)
+
+houseprice['Predicted Price'] = np.mat(predicted_result).transpose()
+houseprice['Predicted label']=""
+for i in range(0,len(houseprice)):
+    if houseprice.loc[i,'Predicted Price'] <= outputmean:
+        houseprice.loc[i,'Predicted label'] ='Not expensive'
+    if houseprice.loc[i,'Predicted Price'] > outputmean:
+        houseprice.loc[i,'Predicted label'] ='Expensive'
+#print(outputmean)
+#print(price_min)
+#print(price_max)
+accurate_train=0
+accurate_test=0
+print((round(0.7*len(houseprice)))+1)
+
+for i in range(0,round(0.7*len(houseprice))):
+    if houseprice.loc[i,'Predicted label'] == houseprice.loc[i,'Actual label']:
+        accurate_train = accurate_train +1
+
+for i in range((round(0.7*len(houseprice))+1),len(houseprice)):
+    if houseprice.loc[i,'Predicted label'] == houseprice.loc[i,'Actual label']:
+        accurate_test = accurate_test +1
+
+train_accurate_rate = accurate_train/(round(0.7*len(houseprice)))
+test_accurate_rate = accurate_test/(round(0.3*len(houseprice)))
+print(train_accurate_rate)
+print(test_accurate_rate)
+houseprice
