@@ -1,0 +1,50 @@
+import pandas as pd
+import numpy as np
+from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
+from sklearn.preprocessing import LabelEncoder
+from sklearn import metrics
+
+Train = pd.read_csv("/Users/tplusd/Desktop/Machine learning project/train.csv")
+Train['new_index'] = range(0,3800,1)
+Train=Train.set_index('new_index')
+Train = Train[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result']]
+Test = pd.read_csv("/Users/tplusd/Desktop/Machine learning project/test.csv")
+Test['new_index'] = range(0,760,1)
+Test=Test.set_index('new_index')
+Test = Test[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result']]
+
+Total_data =Train.append(Test)
+
+
+Total_data['new_index'] = range(0,4560,1)
+Total_data=Total_data.set_index('new_index')
+
+
+INPUT=Total_data[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Home Streak','Away Streak']]
+INPUT=pd.get_dummies(INPUT,columns=['HomeTeam'])
+INPUT=pd.get_dummies(INPUT,columns=['AwayTeam'])
+
+train_input=INPUT[0:3800]
+test_input=INPUT[3800:4560]
+
+number2 = LabelEncoder()
+Total_data['Result']=number2.fit_transform(Total_data['Result'].astype('str'))
+
+
+train_output=Total_data['Result'][0:3800]
+test_output=Total_data['Result'][3800:4560]
+
+
+train_input=np.array(train_input)
+train_output = np.array(train_output)
+test_input=np.array(test_input)
+test_output = np.array(test_output)
+svm=SVC(kernel='rbf',gamma = 1,C=0.24)
+svm.fit(train_input, train_output)
+print(svm.fit(train_input, train_output).score(train_input, train_output))
+p=svm.predict(test_input)
+print(metrics.accuracy_score(test_output,p))
+
+
+
