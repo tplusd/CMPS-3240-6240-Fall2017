@@ -1,0 +1,246 @@
+import pandas as pd
+path = "/Users/tplusd/Desktop/Machine learning project/"
+Total = pd.DataFrame(columns=['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result'])
+for l in range(1,11):
+    
+    data = pd.read_csv(path+str(2004+l)+'-'+str(2005+l)+'.csv')
+    def result (row):
+        if row['FTHG'] > row['FTAG']:
+            return 'Home Win'
+        if row['FTHG'] < row['FTAG']:
+            return 'Home Loss'
+        if row['FTHG'] == row['FTAG']:
+            return 'Draw' 
+    data['Result']=data.apply(lambda row:result (row),axis=1)
+
+    def result2 (row):
+        if row['FTHG'] - row['FTAG'] == 1:
+            return 'One goal win'
+        if row['FTHG'] - row['FTAG'] == 2:
+            return 'Two goals win'
+        if row['FTHG'] - row['FTAG'] >= 3:
+            return 'Three or more goals win'
+        if row['FTHG'] - row['FTAG'] == -1:
+            return 'One goal loss'
+        if row['FTHG'] - row['FTAG'] == -2:
+            return 'Two goals loss'
+        if row['FTHG'] - row['FTAG'] <= -3:
+            return 'Three or more goals loss' 
+        if row['FTHG'] == row['FTAG']:
+            return 'Draw' 
+    data['Advanced result']=data.apply(lambda row:result2 (row),axis=1)
+
+
+    def Home_point (row):
+        if row['Result'] =='Home Loss':
+            return 0
+        if row['Result'] =='Home Win':
+            return 3
+        if row['Result'] =='Draw':
+            return 1
+    data['Home Point']=data.apply(lambda row:Home_point (row),axis=1)
+
+    def Away_point (row):
+        if row['Result'] =='Home Loss':
+            return 3
+        if row['Result'] =='Home Win':
+            return 0
+        if row['Result'] =='Draw':
+            return 1
+    data['Away Point']=data.apply(lambda row:Away_point (row),axis=1)
+
+    data['Round']=""
+
+    for i in range(0,len(data)):
+        data.loc[i,'Round'] = int(i/10)+1
+    data['Home Streak']=""
+    data['Away Streak']=""
+
+
+    for i in range(0,len(data)):
+        data.loc[i,'Home Streak']=0
+        data.loc[i,'Away Streak']=0
+
+    for i in range(70,len(data)):
+        for j in range(0,i-1):    
+   
+            if data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'HomeTeam'] == data.loc[j,'HomeTeam'] and data.loc[j,'Result']=='Home Loss':
+                data.loc[i,'Home Streak'] += 0        
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'HomeTeam'] == data.loc[j,'HomeTeam'] and data.loc[j,'Result']=='Home Win':
+                data.loc[i,'Home Streak'] += 3            
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'HomeTeam'] == data.loc[j,'HomeTeam'] and data.loc[j,'Result']=='Draw':
+                data.loc[i,'Home Streak'] += 1             
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'HomeTeam'] == data.loc[j,'AwayTeam'] and data.loc[j,'Result']=='Home Loss':
+                data.loc[i,'Home Streak'] += 3
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'HomeTeam'] == data.loc[j,'AwayTeam'] and data.loc[j,'Result']=='Home Win':
+                data.loc[i,'Home Streak'] += 0
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'HomeTeam'] == data.loc[j,'AwayTeam'] and data.loc[j,'Result']=='Draw':
+                data.loc[i,'Home Streak'] += 1
+            else:
+                data.loc[i,'Home Streak'] += 0
+            
+    for i in range(70,len(data)):
+        for j in range(0,i-1):    
+   
+            if data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'AwayTeam'] == data.loc[j,'HomeTeam'] and data.loc[j,'Result']=='Home Loss':
+                data.loc[i,'Away Streak'] += 0        
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'AwayTeam'] == data.loc[j,'HomeTeam'] and data.loc[j,'Result']=='Home Win':
+                data.loc[i,'Away Streak'] += 3            
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'AwayTeam'] == data.loc[j,'HomeTeam'] and data.loc[j,'Result']=='Draw':
+                data.loc[i,'Away Streak'] += 1             
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'AwayTeam'] == data.loc[j,'AwayTeam'] and data.loc[j,'Result']=='Home Loss':
+                data.loc[i,'Away Streak'] += 3
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'AwayTeam'] == data.loc[j,'AwayTeam'] and data.loc[j,'Result']=='Home Win':
+                data.loc[i,'Away Streak'] += 0
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'AwayTeam'] == data.loc[j,'AwayTeam'] and data.loc[j,'Result']=='Draw':
+                data.loc[i,'Away Streak'] += 1
+            else:
+                data.loc[i,'Away Streak'] += 0
+                                
+    columns_keep =['HomeTeam','AwayTeam','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result']
+    data = data[columns_keep]
+
+    rank = pd.read_csv(path+str(2004+l)+'-'+str(2005+l)+' ranking.csv')
+    rank.rename(columns={'Unnamed: 0':'Team'}, inplace=True )
+    join1 = pd.merge(data,rank, how='left', left_on=['HomeTeam'], right_on=['Team'])
+    join2 = pd.merge(join1,rank,how='left',left_on=['AwayTeam'],right_on=['Team'])
+    #print(join2)
+     
+    join2.rename(columns={'ELO rank_x':'Home ELO rank'}, inplace=True )
+    join2.rename(columns={'ELO rank_y':'Away ELO rank'}, inplace=True )
+    #else:
+        #join2.rename(columns={'/tELO rank_x':'Home ELO rank'}, inplace=True )
+        #join2.rename(columns={'/tELO rank_y':'Away ELO rank'}, inplace=True )
+    columns_keep =['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result']
+    join2 = join2[columns_keep]
+    print(join2)
+    Total = Total.append(join2)
+
+Total
+Total.to_csv("/Users/tplusd/Desktop/Machine learning project/train.csv")
+
+
+
+
+
+
+import pandas as pd
+path = "/Users/tplusd/Desktop/Machine learning project/"
+Total = pd.DataFrame(columns=['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result'])
+for l in range(1,3):
+    
+    data = pd.read_csv(path+str(2014+l)+'-'+str(2015+l)+'.csv')
+    def result (row):
+        if row['FTHG'] > row['FTAG']:
+            return 'Home Win'
+        if row['FTHG'] < row['FTAG']:
+            return 'Home Loss'
+        if row['FTHG'] == row['FTAG']:
+            return 'Draw' 
+    data['Result']=data.apply(lambda row:result (row),axis=1)
+
+    def result2 (row):
+        if row['FTHG'] - row['FTAG'] == 1:
+            return 'One goal win'
+        if row['FTHG'] - row['FTAG'] == 2:
+            return 'Two goals win'
+        if row['FTHG'] - row['FTAG'] >= 3:
+            return 'Three or more goals win'
+        if row['FTHG'] - row['FTAG'] == -1:
+            return 'One goal loss'
+        if row['FTHG'] - row['FTAG'] == -2:
+            return 'Two goals loss'
+        if row['FTHG'] - row['FTAG'] <= -3:
+            return 'Three or more goals loss' 
+        if row['FTHG'] == row['FTAG']:
+            return 'Draw' 
+    data['Advanced result']=data.apply(lambda row:result2 (row),axis=1)
+
+
+    def Home_point (row):
+        if row['Result'] =='Home Loss':
+            return 0
+        if row['Result'] =='Home Win':
+            return 3
+        if row['Result'] =='Draw':
+            return 1
+    data['Home Point']=data.apply(lambda row:Home_point (row),axis=1)
+
+    def Away_point (row):
+        if row['Result'] =='Home Loss':
+            return 3
+        if row['Result'] =='Home Win':
+            return 0
+        if row['Result'] =='Draw':
+            return 1
+    data['Away Point']=data.apply(lambda row:Away_point (row),axis=1)
+
+    data['Round']=""
+
+    for i in range(0,len(data)):
+        data.loc[i,'Round'] = int(i/10)+1
+    data['Home Streak']=""
+    data['Away Streak']=""
+
+
+    for i in range(0,len(data)):
+        data.loc[i,'Home Streak']=0
+        data.loc[i,'Away Streak']=0
+
+    for i in range(70,len(data)):
+        for j in range(0,i-1):    
+   
+            if data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'HomeTeam'] == data.loc[j,'HomeTeam'] and data.loc[j,'Result']=='Home Loss':
+                data.loc[i,'Home Streak'] += 0        
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'HomeTeam'] == data.loc[j,'HomeTeam'] and data.loc[j,'Result']=='Home Win':
+                data.loc[i,'Home Streak'] += 3            
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'HomeTeam'] == data.loc[j,'HomeTeam'] and data.loc[j,'Result']=='Draw':
+                data.loc[i,'Home Streak'] += 1             
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'HomeTeam'] == data.loc[j,'AwayTeam'] and data.loc[j,'Result']=='Home Loss':
+                data.loc[i,'Home Streak'] += 3
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'HomeTeam'] == data.loc[j,'AwayTeam'] and data.loc[j,'Result']=='Home Win':
+                data.loc[i,'Home Streak'] += 0
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'HomeTeam'] == data.loc[j,'AwayTeam'] and data.loc[j,'Result']=='Draw':
+                data.loc[i,'Home Streak'] += 1
+            else:
+                data.loc[i,'Home Streak'] += 0
+            
+    for i in range(70,len(data)):
+        for j in range(0,i-1):    
+   
+            if data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'AwayTeam'] == data.loc[j,'HomeTeam'] and data.loc[j,'Result']=='Home Loss':
+                data.loc[i,'Away Streak'] += 0        
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'AwayTeam'] == data.loc[j,'HomeTeam'] and data.loc[j,'Result']=='Home Win':
+                data.loc[i,'Away Streak'] += 3            
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'AwayTeam'] == data.loc[j,'HomeTeam'] and data.loc[j,'Result']=='Draw':
+                data.loc[i,'Away Streak'] += 1             
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'AwayTeam'] == data.loc[j,'AwayTeam'] and data.loc[j,'Result']=='Home Loss':
+                data.loc[i,'Away Streak'] += 3
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'AwayTeam'] == data.loc[j,'AwayTeam'] and data.loc[j,'Result']=='Home Win':
+                data.loc[i,'Away Streak'] += 0
+            elif data.loc[i,'Round']-data.loc[j,'Round'] <=7 and data.loc[i,'AwayTeam'] == data.loc[j,'AwayTeam'] and data.loc[j,'Result']=='Draw':
+                data.loc[i,'Away Streak'] += 1
+            else:
+                data.loc[i,'Away Streak'] += 0
+                                
+    columns_keep =['HomeTeam','AwayTeam','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result']
+    data = data[columns_keep]
+
+    rank = pd.read_csv(path+str(2014+l)+'-'+str(2015+l)+' ranking.csv')
+    rank.rename(columns={'Unnamed: 0':'Team'}, inplace=True )
+    join1 = pd.merge(data,rank, how='left', left_on=['HomeTeam'], right_on=['Team'])
+    join2 = pd.merge(join1,rank,how='left',left_on=['AwayTeam'],right_on=['Team'])
+    #print(join2)
+     
+    join2.rename(columns={'ELO rank_x':'Home ELO rank'}, inplace=True )
+    join2.rename(columns={'ELO rank_y':'Away ELO rank'}, inplace=True )
+    #else:
+        #join2.rename(columns={'/tELO rank_x':'Home ELO rank'}, inplace=True )
+        #join2.rename(columns={'/tELO rank_y':'Away ELO rank'}, inplace=True )
+    columns_keep =['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result']
+    join2 = join2[columns_keep]
+    print(join2)
+    Total = Total.append(join2)
+
+Total
+Total.to_csv("/Users/tplusd/Desktop/Machine learning project/test.csv")
