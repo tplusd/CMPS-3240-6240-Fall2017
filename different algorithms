@@ -1,0 +1,108 @@
+import pandas as pd
+import numpy as np
+
+from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import LabelEncoder
+from sklearn import metrics
+
+Train = pd.read_csv("/Users/tplusd/Desktop/Machine learning project/train.csv")
+Train['new_index'] = range(0,3800,1)
+Train=Train.set_index('new_index')
+Train = Train[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result']]
+Test = pd.read_csv("/Users/tplusd/Desktop/Machine learning project/test.csv")
+Test['new_index'] = range(0,760,1)
+Test=Test.set_index('new_index')
+Test = Test[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result']]
+
+Total_data =Train.append(Test)
+
+#number = LabelEncoder()
+#Total_data['HomeTeam']=number.fit_transform(Total_data['HomeTeam'].astype('str'))
+#Total_data['AwayTeam']=number.fit_transform(Total_data['AwayTeam'].astype('str'))
+Total_data['new_index'] = range(0,4560,1)
+Total_data=Total_data.set_index('new_index')
+
+#HomeTeam_dat=pd.get_dummies(Total_data,prefix=['HomeTeam'])
+INPUT=Total_data[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Home Streak','Away Streak']]
+INPUT=pd.get_dummies(INPUT,columns=['HomeTeam'])
+INPUT=pd.get_dummies(INPUT,columns=['AwayTeam'])
+
+train_input=INPUT[0:3800]
+test_input=INPUT[3800:4560]
+
+
+
+number2 = LabelEncoder()
+Total_data['Result']=number2.fit_transform(Total_data['Result'].astype('str'))
+#Test['Result']=number2.fit_transform(Train['Result'].astype('str'))
+#Total_data=pd.get_dummies(Total_data,columns=['HomeTeam'])
+#Total_data=pd.get_dummies(Total_data,columns=['AwayTeam'])
+#train_input=Train[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Home Streak','Away Streak']]
+#train_input=np.mat(train_data)
+#train_output=Train[['Result']]
+#train_output=np.mat(train_output)
+#np.shape(train_output)
+
+train_output=Total_data['Result'][0:3800]
+test_output=Total_data['Result'][3800:4560]
+#svm = LinearSVC(C=100)
+
+train_input=np.array(train_input)
+train_output = np.array(train_output)
+test_input=np.array(test_input)
+test_output = np.array(test_output)
+
+
+# using svm with gaussian kernel
+from sklearn.svm import SVC
+svm=SVC(kernel='rbf',gamma = 0.15,C=0.24)
+svm.fit(train_input,train_output)
+print(svm.score(train_input, train_output))
+p=svm.predict(test_input)
+print(metrics.accuracy_score(test_output,p))
+print(p)
+
+print(confusion_matrix(test_output,p))
+
+from sklearn.svm import LinearSVC
+# using svm with linear kernel
+linearsvm=LinearSVC(C=3.0)
+linearsvm.fit(train_input,train_output)
+p=linearsvm.predict(test_input)
+print(linearsvm.score(train_input, train_output))
+print(metrics.accuracy_score(test_output,p))
+print(p)
+print(confusion_matrix(test_output,p))
+
+# using gaussian naive bayes 
+from sklearn.naive_bayes import GaussianNB
+gnb = GaussianNB()
+gnb.fit(train_input, train_output)
+test_predict = gnb.predict(test_input)
+print(gnb.score(train_input, train_output))
+print(metrics.accuracy_score(test_output,test_predict))
+print(test_predict)
+print(confusion_matrix(test_output,test_predict))
+
+
+# using Multinomial naive bayes
+from sklearn.naive_bayes import MultinomialNB
+mnb = MultinomialNB()
+mnb.fit(train_input, train_output)
+test_predict = mnb.predict(test_input)
+print(mnb.score(train_input, train_output))
+print(metrics.accuracy_score(test_output,test_predict))
+print(test_predict)
+print(confusion_matrix(test_output,test_predict))
+
+
+# using random forest
+from sklearn.ensemble import RandomForestClassifier
+rdf=RandomForestClassifier(max_depth=8)
+rdf.fit(train_input,train_output)
+test_predict=rdf.predict(test_input)
+print(rdf.score(train_input,train_output))
+print(metrics.accuracy_score(test_output,test_predict))
+print(test_predict)
+print(confusion_matrix(test_output,test_predict))
+
