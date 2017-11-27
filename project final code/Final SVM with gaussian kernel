@@ -1,0 +1,222 @@
+import pandas as pd
+import numpy as np
+
+from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import LabelEncoder
+from sklearn import metrics
+
+Train = pd.read_csv("/Users/tplusd/Desktop/Machine learning project/train.csv")
+Train['new_index'] = range(0,3800,1)
+Train=Train.set_index('new_index')
+Train = Train[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result']]
+Test = pd.read_csv("/Users/tplusd/Desktop/Machine learning project/test.csv")
+Test['new_index'] = range(0,760,1)
+Test=Test.set_index('new_index')
+Test = Test[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result']]
+
+Total_data =Train.append(Test)
+
+#number = LabelEncoder()
+#Total_data['HomeTeam']=number.fit_transform(Total_data['HomeTeam'].astype('str'))
+#Total_data['AwayTeam']=number.fit_transform(Total_data['AwayTeam'].astype('str'))
+Total_data['new_index'] = range(0,4560,1)
+Total_data=Total_data.set_index('new_index')
+
+#HomeTeam_dat=pd.get_dummies(Total_data,prefix=['HomeTeam'])
+INPUT=Total_data[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Home Streak','Away Streak']]
+INPUT=pd.get_dummies(INPUT,columns=['HomeTeam'])
+INPUT=pd.get_dummies(INPUT,columns=['AwayTeam'])
+
+train_input=INPUT[0:3800]
+test_input=INPUT[3800:4560]
+
+
+
+number2 = LabelEncoder()
+Total_data['Result']=number2.fit_transform(Total_data['Result'].astype('str'))
+#Test['Result']=number2.fit_transform(Train['Result'].astype('str'))
+#Total_data=pd.get_dummies(Total_data,columns=['HomeTeam'])
+#Total_data=pd.get_dummies(Total_data,columns=['AwayTeam'])
+#train_input=Train[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Home Streak','Away Streak']]
+#train_input=np.mat(train_data)
+#train_output=Train[['Result']]
+#train_output=np.mat(train_output)
+#np.shape(train_output)
+
+train_output=Total_data['Result'][0:3800]
+test_output=Total_data['Result'][3800:4560]
+#svm = LinearSVC(C=100)
+
+train_input=np.array(train_input)
+train_output = np.array(train_output)
+test_input=np.array(test_input)
+test_output = np.array(test_output)
+
+
+# using svm with gaussian kernel
+from sklearn.svm import SVC
+svm=SVC(kernel='rbf',gamma =1 ,C=1)
+svm.fit(train_input,train_output)
+print(svm.score(train_input, train_output))
+p=svm.predict(test_input)
+print(metrics.accuracy_score(test_output,p))
+print(p)
+
+print(confusion_matrix(test_output,p))
+
+test_output
+
+
+# use svm with gaussian kernel and try different C and gamma values
+import numpy as np
+from sklearn.svm import SVC
+import pandas as pd
+Cseries=[0.01,0.25,0.5,0.75,1,1.25,1.5,1.75,2,2.25,2.5,2.75,3]
+gammaseries=[0.000001,0.00001,0.0001,0.001,0.01,0.05,0.1,0.15,0.2,0.25,0.5,0.75,1]
+accuracy_train=[]
+accuracy_test=[]
+data=[]
+
+
+for j in range(0,13):
+    a=Cseries[j]
+    #Cseries.append(a)
+    for i in range(0,13):
+        b=gammaseries[i]
+        #gammaseries.append(b)
+        row=[]
+        svm=SVC(kernel='rbf',gamma = b,C=a)
+        svm.fit(train_input,train_output)
+        print(svm.score(train_input, train_output))
+        p=svm.predict(test_input)
+        print(metrics.accuracy_score(test_output,p))
+        #print(p)
+        
+        #print(confusion_matrix(test_output,p))
+        accuracy_train.append(svm.score(train_input, train_output))
+        accuracy_test.append(metrics.accuracy_score(test_output,p))
+        row.append(Cseries[j])
+        row.append(gammaseries[i])
+        row.append(svm.score(train_input, train_output))
+        row.append(metrics.accuracy_score(test_output,p))
+        data.append(row)
+print(Cseries)
+print(gammaseries)
+print(accuracy_train)
+print(accuracy_test)
+
+print(data)
+df = pd.DataFrame(data)
+df.to_csv("/Users/tplusd/Desktop/Machine learning project/SVM1.csv")
+
+# using gaussian kernel SVM  and different sample weights
+from sklearn.svm import SVC
+import pandas as pd
+weightserie=[]
+accuracy_train=[]
+accuracy_test=[]
+data=[]
+
+for j in range(0,100):
+    c=j*0.1
+    weight=[]
+    weightserie.append(c)
+    
+    
+    for i in range(0,len(train_output)):
+        
+        if train_output[i] == 0:
+        
+            weight.append(c)
+        else:
+            weight.append(1)
+
+    
+    row=[]
+    svm=SVC(kernel='rbf',gamma = 0.001,C=2.75) 
+    svm.fit(train_input,train_output,sample_weight=weight)
+    print(svm.score(train_input, train_output))
+    p=svm.predict(test_input)
+    print(metrics.accuracy_score(test_output,p))
+    print(confusion_matrix(test_output,p))
+    accuracy_train.append(svm.score(train_input, train_output))
+    accuracy_test.append(metrics.accuracy_score(test_output,p))
+    row.append(c)
+    row.append(svm.score(train_input, train_output))
+    row.append(metrics.accuracy_score(test_output,p))
+    data.append(row)
+    
+print(weightserie)
+print(accuracy_train)
+print(accuracy_test)
+
+df = pd.DataFrame(data)
+df.to_csv("/Users/tplusd/Desktop/Machine learning project/SVM_gaussian_weight.csv")
+
+# using gaussian kernel SVM  and different sample weights
+from sklearn.svm import SVC
+import pandas as pd
+weightserie=[]
+accuracy_train=[]
+accuracy_test=[]
+data=[]
+n=0
+for j in range(0,100):
+    c=j*0.01+1
+    weight=[]
+    weightserie.append(c)
+    n=n+1
+    
+    for i in range(0,len(train_output)):
+        
+        if train_output[i] == 0:
+        
+            weight.append(c)
+        else:
+            weight.append(1)
+
+    
+    row=[]
+    svm=SVC(kernel='rbf',gamma = 0.001,C=2.78) 
+    svm.fit(train_input,train_output,sample_weight=weight)
+    print(n)
+    print(svm.score(train_input, train_output))
+    p=svm.predict(test_input)
+    print(metrics.accuracy_score(test_output,p))
+    print(confusion_matrix(test_output,p))
+    accuracy_train.append(svm.score(train_input, train_output))
+    accuracy_test.append(metrics.accuracy_score(test_output,p))
+    row.append(c)
+    row.append(svm.score(train_input, train_output))
+    row.append(metrics.accuracy_score(test_output,p))
+    data.append(row)
+    
+print(weightserie)
+print(accuracy_train)
+print(accuracy_test)
+
+df = pd.DataFrame(data)
+df.to_csv("/Users/tplusd/Desktop/Machine learning project/SVM_gaussian_weight2.csv")
+
+# final result of svm with gaussian kernel
+weight=[]
+for i in range(0,len(train_output)):
+        
+        if train_output[i] == 0:
+        
+            weight.append(1.09)
+        else:
+            weight.append(1)
+
+from sklearn.svm import SVC
+svm=SVC(kernel='rbf',gamma = 0.001,C=2.75)
+svm.fit(train_input,train_output,sample_weight=weight)
+print(svm.score(train_input, train_output))
+p=svm.predict(test_input)
+print(metrics.accuracy_score(test_output,p))
+print(p)
+
+print(confusion_matrix(test_output,p))
+
+test_output
+
