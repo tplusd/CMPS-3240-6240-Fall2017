@@ -1,0 +1,171 @@
+import pandas as pd
+import numpy as np
+
+from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import LabelEncoder
+from sklearn import metrics
+
+Train = pd.read_csv("/Users/tplusd/Desktop/Machine learning project/train2.csv")
+Train['new_index'] = range(0,3040,1)
+Train=Train.set_index('new_index')
+Train = Train[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Home Shots','Away Shots','Home Goals','Away Goals','Home Yellow cards','Away Yellow cards','Home Red cards','Away Red cards','Home Clean sheets','Away Clean sheets','Home Passes','Away Passes','Round','Advanced result']]
+Test = pd.read_csv("/Users/tplusd/Desktop/Machine learning project/test2.csv")
+Test['new_index'] = range(0,760,1)
+Test=Test.set_index('new_index')
+Test = Test[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Home Shots','Away Shots','Home Goals','Away Goals','Home Yellow cards','Away Yellow cards','Home Red cards','Away Red cards','Home Clean sheets','Away Clean sheets','Home Passes','Away Passes','Round','Advanced result']]
+
+Total_data =Train.append(Test)
+
+#number = LabelEncoder()
+#Total_data['HomeTeam']=number.fit_transform(Total_data['HomeTeam'].astype('str'))
+#Total_data['AwayTeam']=number.fit_transform(Total_data['AwayTeam'].astype('str'))
+Total_data['new_index'] = range(0,3800,1)
+Total_data=Total_data.set_index('new_index')
+
+#HomeTeam_dat=pd.get_dummies(Total_data,prefix=['HomeTeam'])
+INPUT=Total_data[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Home Streak','Away Streak','Home Shots','Away Shots','Home Goals','Away Goals','Home Yellow cards','Away Yellow cards','Home Red cards','Away Red cards','Home Clean sheets','Away Clean sheets','Home Passes','Away Passes']]
+INPUT=pd.get_dummies(INPUT,columns=['HomeTeam'])
+INPUT=pd.get_dummies(INPUT,columns=['AwayTeam'])
+INPUT['Home ELO rank']= (INPUT['Home ELO rank']-INPUT['Home ELO rank'].min())/(INPUT['Home ELO rank'].max()-INPUT['Home ELO rank'].min())
+INPUT['Away ELO rank']= (INPUT['Away ELO rank']-INPUT['Away ELO rank'].min())/(INPUT['Away ELO rank'].max()-INPUT['Away ELO rank'].min())
+INPUT['Home Streak']= (INPUT['Home Streak']-INPUT['Home Streak'].min())/(INPUT['Home Streak'].max()-INPUT['Home Streak'].min())
+INPUT['Away Streak']= (INPUT['Away Streak']-INPUT['Away Streak'].min())/(INPUT['Away Streak'].max()-INPUT['Away Streak'].min())
+INPUT['Home Shots']= (INPUT['Home Shots']-INPUT['Home Shots'].min())/(INPUT['Home Shots'].max()-INPUT['Home Shots'].min())
+INPUT['Away Shots']= (INPUT['Away Shots']-INPUT['Away Shots'].min())/(INPUT['Away Shots'].max()-INPUT['Away Shots'].min())
+INPUT['Home Goals']= (INPUT['Home Goals']-INPUT['Home Goals'].min())/(INPUT['Home Goals'].max()-INPUT['Home Goals'].min())
+INPUT['Away Goals']= (INPUT['Away Goals']-INPUT['Away Goals'].min())/(INPUT['Away Goals'].max()-INPUT['Away Goals'].min())
+INPUT['Home Passes']= (INPUT['Home Passes']-INPUT['Home Passes'].min())/(INPUT['Home Passes'].max()-INPUT['Home Passes'].min())
+INPUT['Away Passes']= (INPUT['Away Passes']-INPUT['Away Passes'].min())/(INPUT['Away Passes'].max()-INPUT['Away Passes'].min())
+INPUT['Home Yellow cards']= (INPUT['Home Yellow cards']-INPUT['Home Yellow cards'].min())/(INPUT['Home Yellow cards'].max()-INPUT['Home Yellow cards'].min())
+INPUT['Away Yellow cards']= (INPUT['Away Yellow cards']-INPUT['Away Yellow cards'].min())/(INPUT['Away Yellow cards'].max()-INPUT['Away Yellow cards'].min())
+INPUT['Home Red cards']= (INPUT['Home Red cards']-INPUT['Home Red cards'].min())/(INPUT['Home Red cards'].max()-INPUT['Home Red cards'].min())
+INPUT['Away Red cards']= (INPUT['Away Red cards']-INPUT['Away Red cards'].min())/(INPUT['Away Red cards'].max()-INPUT['Away Red cards'].min())
+INPUT['Home Clean sheets']= (INPUT['Home Clean sheets']-INPUT['Home Clean sheets'].min())/(INPUT['Home Clean sheets'].max()-INPUT['Home Clean sheets'].min())
+INPUT['Away Clean sheets']= (INPUT['Away Clean sheets']-INPUT['Away Clean sheets'].min())/(INPUT['Away Clean sheets'].max()-INPUT['Away Clean sheets'].min())
+train_input=INPUT[0:3040]
+test_input=INPUT[3040:3800]
+
+
+
+number2 = LabelEncoder()
+Total_data['Result']=number2.fit_transform(Total_data['Result'].astype('str'))
+#Test['Result']=number2.fit_transform(Train['Result'].astype('str'))
+#Total_data=pd.get_dummies(Total_data,columns=['HomeTeam'])
+#Total_data=pd.get_dummies(Total_data,columns=['AwayTeam'])
+#train_input=Train[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Home Streak','Away Streak']]
+#train_input=np.mat(train_data)
+#train_output=Train[['Result']]
+#train_output=np.mat(train_output)
+#np.shape(train_output)
+
+train_output=Total_data['Result'][0:3040]
+test_output=Total_data['Result'][3040:3800]
+#svm = LinearSVC(C=100)
+
+train_input=np.array(train_input)
+train_output = np.array(train_output)
+test_input=np.array(test_input)
+test_output = np.array(test_output)
+
+from sklearn.neural_network import MLPClassifier
+
+NPC = MLPClassifier(solver='adam', alpha=0.001,hidden_layer_sizes=(5,30))
+NPC.fit(train_input,train_output)
+print(NPC.score(train_input, train_output))
+p=NPC.predict(test_input)
+print(metrics.accuracy_score(test_output,p))
+print(p)
+
+print(confusion_matrix(test_output,p))
+p=NPC.predict(train_input)
+print(confusion_matrix(train_output,p))
+#test_output
+train_input    
+
+# grid search
+
+# use svm with gaussian kernel and try different C and gamma values
+import numpy as np
+from sklearn.neural_network import MLPClassifier
+import pandas as pd
+N1series=[1,2,5,10,20,30,40,50]
+N2series=[1,2,5,10,20,30,40,50]
+accuracy_train=[]
+accuracy_test=[]
+data=[]
+
+
+for j in range(0,len(N1series)):
+    a=N1series[j]
+    #Cseries.append(a)
+    for i in range(0,len(N2series)):
+        b=N2series[i]
+        #gammaseries.append(b)
+        row=[]
+        NPC = MLPClassifier(solver='adam', alpha=0.001,hidden_layer_sizes=(a,b))
+        NPC.fit(train_input,train_output)
+        print(NPC.score(train_input, train_output))
+        p=NPC.predict(test_input)
+        print(metrics.accuracy_score(test_output,p))
+        #print(p)
+        
+        #print(confusion_matrix(test_output,p))
+        accuracy_train.append(NPC.score(train_input, train_output))
+        accuracy_test.append(metrics.accuracy_score(test_output,p))
+        row.append(N1series[j])
+        row.append(N2series[i])
+        row.append(NPC.score(train_input, train_output))
+        row.append(metrics.accuracy_score(test_output,p))
+        data.append(row)
+print(N1series)
+print(N2series)
+print(accuracy_train)
+print(accuracy_test)
+
+print(data)
+df = pd.DataFrame(data)
+df.to_csv("/Users/tplusd/Desktop/Machine learning project/SVM_neuralnetwork.csv")
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import ListedColormap
+import numpy as np
+x= [1,2,5,10,20,30,40,50]
+y= [1,2,5,10,20,30,40,50]
+cMap = ListedColormap(['white', 'green', 'blue','orange','red'])
+Candgamma = pd.read_csv("/Users/tplusd/Desktop/Machine learning project/SVM_neuralnetwork.csv",header=None)
+Candgamma=Candgamma[3]
+Candgamma=np.array(Candgamma)
+test_accuracy=[]
+for i in range(0,len(y)):
+    row=[]
+    for j in range(0,len(x)):
+        
+        row.append(Candgamma[i*len(x)+j])
+    test_accuracy.append(row)
+test_accuracy
+
+fig,ax=plt.subplots()
+heatmap=ax.pcolor(test_accuracy,cmap='RdBu')
+cbar=plt.colorbar(heatmap)
+column_labels=[1,2,5,10,20,30,40,50]
+row_labels=[1,2,5,10,20,30,40,50]
+X=range(1,9)
+Y=range(1,9)
+ax.set_xticks(X)
+ax.set_yticks(Y)
+
+
+ax.set_xticklabels(column_labels, minor=False)
+ax.set_yticklabels(row_labels, minor=False)
+ax.set_xlabel('layers')
+ax.set_ylabel('nodes')
+fig
+plt.savefig("/Users/tplusd/Desktop/Machine learning project/grid search 8.png")
+#plt.close(fig)
+plt.show()
+#plt.savefig("/Users/tplusd/Desktop/Machine learning project/grid search 1.png")
+
+
+
+
