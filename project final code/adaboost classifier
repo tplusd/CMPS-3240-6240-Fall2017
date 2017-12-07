@@ -1,0 +1,79 @@
+import pandas as pd
+import numpy as np
+
+from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import LabelEncoder
+from sklearn import metrics
+
+Train = pd.read_csv("/Users/tplusd/Desktop/Machine learning project/train.csv")
+Train['new_index'] = range(0,3800,1)
+Train=Train.set_index('new_index')
+Train = Train[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result']]
+Test = pd.read_csv("/Users/tplusd/Desktop/Machine learning project/test.csv")
+Test['new_index'] = range(0,760,1)
+Test=Test.set_index('new_index')
+Test = Test[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Result','Home Point','Away Point','Home Streak','Away Streak','Round','Advanced result']]
+
+Total_data =Train.append(Test)
+
+#number = LabelEncoder()
+#Total_data['HomeTeam']=number.fit_transform(Total_data['HomeTeam'].astype('str'))
+#Total_data['AwayTeam']=number.fit_transform(Total_data['AwayTeam'].astype('str'))
+Total_data['new_index'] = range(0,4560,1)
+Total_data=Total_data.set_index('new_index')
+
+#HomeTeam_dat=pd.get_dummies(Total_data,prefix=['HomeTeam'])
+INPUT=Total_data[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Home Streak','Away Streak']]
+INPUT=pd.get_dummies(INPUT,columns=['HomeTeam'])
+INPUT=pd.get_dummies(INPUT,columns=['AwayTeam'])
+INPUT['Home ELO rank']= (INPUT['Home ELO rank']-INPUT['Home ELO rank'].min())/(INPUT['Home ELO rank'].max()-INPUT['Home ELO rank'].min())
+INPUT['Away ELO rank']= (INPUT['Away ELO rank']-INPUT['Away ELO rank'].min())/(INPUT['Away ELO rank'].max()-INPUT['Away ELO rank'].min())
+INPUT['Home Streak']= (INPUT['Home Streak']-INPUT['Home Streak'].min())/(INPUT['Home Streak'].max()-INPUT['Home Streak'].min())
+INPUT['Away Streak']= (INPUT['Away Streak']-INPUT['Away Streak'].min())/(INPUT['Away Streak'].max()-INPUT['Away Streak'].min())
+
+train_input=INPUT[0:3800]
+test_input=INPUT[3800:4560]
+
+
+
+number2 = LabelEncoder()
+Total_data['Result']=number2.fit_transform(Total_data['Result'].astype('str'))
+#Test['Result']=number2.fit_transform(Train['Result'].astype('str'))
+#Total_data=pd.get_dummies(Total_data,columns=['HomeTeam'])
+#Total_data=pd.get_dummies(Total_data,columns=['AwayTeam'])
+#train_input=Train[['HomeTeam','AwayTeam','Home ELO rank','Away ELO rank','Home Streak','Away Streak']]
+#train_input=np.mat(train_data)
+#train_output=Train[['Result']]
+#train_output=np.mat(train_output)
+#np.shape(train_output)
+
+train_output=Total_data['Result'][0:3800]
+test_output=Total_data['Result'][3800:4560]
+#svm = LinearSVC(C=100)
+
+train_input=np.array(train_input)
+train_output = np.array(train_output)
+test_input=np.array(test_input)
+test_output = np.array(test_output)
+
+# using adaboost classifier
+from sklearn.svm import SVC
+from sklearn.ensemble import AdaBoostClassifier
+abc = AdaBoostClassifier(SVC(kernel='rbf',gamma = 0.001,C=2.75,probability=True),n_estimators=1000)
+abc.fit(train_input, train_output)
+test_predict = abc.predict(test_input)
+print(abc.score(train_input, train_output))
+print(metrics.accuracy_score(test_output,test_predict))
+print(test_predict)
+print(confusion_matrix(test_output,test_predict))
+
+# using adaboost classifier
+from sklearn.svm import SVC
+from sklearn.ensemble import AdaBoostClassifier
+abc = AdaBoostClassifier()
+abc.fit(train_input, train_output)
+test_predict = abc.predict(test_input)
+print(abc.score(train_input, train_output))
+print(metrics.accuracy_score(test_output,test_predict))
+print(test_predict)
+print(confusion_matrix(test_output,test_predict))
